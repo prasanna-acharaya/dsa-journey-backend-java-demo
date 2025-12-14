@@ -11,10 +11,26 @@ services:
         value: prod
       - key: PORT
         value: 8080
-      - key: DATABASE_URL
+      - key: RENDER_POSTGRES_HOSTNAME
         fromDatabase:
           name: dsa-db
-          property: connectionString
+          property: host
+      - key: RENDER_POSTGRES_PORT
+        fromDatabase:
+          name: dsa-db
+          property: port
+      - key: RENDER_POSTGRES_DB
+        fromDatabase:
+          name: dsa-db
+          property: database
+      - key: RENDER_POSTGRES_USER
+        fromDatabase:
+          name: dsa-db
+          property: user
+      - key: RENDER_POSTGRES_PASSWORD
+        fromDatabase:
+          name: dsa-db
+          property: password
 
 databases:
   # PostgreSQL Service
