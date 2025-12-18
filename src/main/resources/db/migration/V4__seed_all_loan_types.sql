@@ -45,7 +45,7 @@ VALUES (
     'EL-202312-003',
     'UNDER_PROCESS',
     'EDUCATION_LOAN',
-    'DSA12K93431'
+    'DSA_ACTIVE_001'
 );
 
 INSERT INTO basic_details (lead_id, first_name, last_name, date_of_birth, gender, marital_status, mobile_number, email_address, current_city)
@@ -116,7 +116,7 @@ VALUES (
     'LAP-202312-005',
     'REJECTED',
     'LOAN_AGAINST_PROPERTY',
-    'DSA12K93431'
+    'DSA_ACTIVE_001'
 );
 
 INSERT INTO basic_details (lead_id, first_name, last_name, date_of_birth, gender, marital_status, mobile_number, email_address, current_city)

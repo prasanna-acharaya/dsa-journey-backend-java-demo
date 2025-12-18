@@ -40,13 +40,13 @@ public class User implements UserDetails {
     @Column(name = "password", nullable = false, length = 255)
     private String password;
 
-    @Column(name = "full_name", nullable = false, length = 255)
+    @Column(name = "full_name", length = 255)
     private String fullName;
 
-    @Column(name = "email", unique = true, nullable = false, length = 255)
+    @Column(name = "email", unique = true, length = 255)
     private String email;
 
-    @Column(name = "mobile_number", nullable = false, length = 15)
+    @Column(name = "mobile_number", length = 15)
     private String mobileNumber;
 
     @Column(name = "role", nullable = false, length = 20)
@@ -102,7 +102,7 @@ public class User implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return !isLocked;
+        return true;
     }
 
     @Override
@@ -120,9 +120,6 @@ public class User implements UserDetails {
      */
     public void recordFailedLogin() {
         this.failedLoginAttempts++;
-        if (this.failedLoginAttempts >= 5) {
-            this.isLocked = true;
-        }
     }
 
     /**

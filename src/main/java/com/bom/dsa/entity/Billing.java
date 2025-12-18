@@ -40,10 +40,12 @@ public class Billing {
     private LocalDate periodEnd;
 
     @Column(name = "payout_percentage", precision = 5, scale = 4, nullable = false)
-    private BigDecimal payoutPercentage;
+    @Builder.Default
+    private BigDecimal payoutPercentage = BigDecimal.ZERO;
 
     @Column(name = "amount", precision = 15, scale = 2, nullable = false)
-    private BigDecimal amount;
+    @Builder.Default
+    private BigDecimal amount = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 30)

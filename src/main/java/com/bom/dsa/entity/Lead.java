@@ -34,7 +34,7 @@ public class Lead {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "application_reference_number", unique = true, nullable = false, length = 50)
+    @Column(name = "application_reference_number", unique = true, length = 50)
     private String applicationReferenceNumber;
 
     @Enumerated(EnumType.STRING)
@@ -96,15 +96,13 @@ public class Lead {
     private String deletedBy;
 
     // Audit fields
-    @CreatedBy
-    @Column(name = "created_by", nullable = false, updatable = false, length = 100)
+    @Column(name = "created_by", length = 100)
     private String createdBy;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    @LastModifiedBy
     @Column(name = "updated_by", length = 100)
     private String updatedBy;
 

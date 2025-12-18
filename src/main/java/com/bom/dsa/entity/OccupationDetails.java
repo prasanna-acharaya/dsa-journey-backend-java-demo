@@ -41,6 +41,7 @@ public class OccupationDetails {
     @Column(name = "designation", length = 100)
     private String designation;
 
-    @Column(name = "total_experience", precision = 4, scale = 2)
-    private BigDecimal totalExperience;
+    @Column(name = "total_experience", precision = 4, scale = 2, nullable = false)
+    @Builder.Default
+    private BigDecimal totalExperience = BigDecimal.ZERO;
 }

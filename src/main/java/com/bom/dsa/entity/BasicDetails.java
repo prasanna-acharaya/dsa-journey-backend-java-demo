@@ -30,16 +30,16 @@ public class BasicDetails {
     @Column(name = "salutation", length = 10)
     private String salutation;
 
-    @Column(name = "first_name", nullable = false, length = 100)
+    @Column(name = "first_name", length = 100)
     private String firstName;
 
     @Column(name = "middle_name", length = 100)
     private String middleName;
 
-    @Column(name = "last_name", nullable = false, length = 100)
+    @Column(name = "last_name", length = 100)
     private String lastName;
 
-    @Column(name = "date_of_birth", nullable = false)
+    @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
 
     @Column(name = "gender", nullable = false, length = 10)
@@ -51,10 +51,10 @@ public class BasicDetails {
     @Column(name = "qualification", length = 50)
     private String qualification;
 
-    @Column(name = "mobile_number", nullable = false, length = 15)
+    @Column(name = "mobile_number", length = 15)
     private String mobileNumber;
 
-    @Column(name = "email_address", nullable = false, length = 255)
+    @Column(name = "email_address", length = 255)
     private String emailAddress;
 
     // Current Address fields

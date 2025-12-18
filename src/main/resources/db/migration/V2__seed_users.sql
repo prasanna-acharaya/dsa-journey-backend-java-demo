@@ -1,25 +1,41 @@
--- Seed default users if they don't exist
+-- Seed precisely 3 accounts with password 'password123'
+-- Bcrypt Hash: $2a$10$8.UnVuG9HHgffUDAlk8q7uy5qFEVSFAh2Uhc9VC2HzmcD7uCuZqy.
 
--- Admin User
-INSERT INTO users (dsa_unique_code, password, full_name, email, mobile_number, role, created_by)
+-- 1. Admin User
+INSERT INTO users (id, dsa_unique_code, password, full_name, email, mobile_number, role, created_by)
 VALUES (
+    'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380001',
     'ADMIN001',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcXQQzZIE.2m5rVZt0TCXV.Rmr6',
-    'System Administrator',
+    '$2a$10$uYxZtKxy0scNyAblaHSxpe6u2zpw46raAJr/DNBZzrM4/1XpvHBe2',
+    'Admin User',
     'admin@bom.com',
-    '9999999999',
+    '9999999001',
     'ADMIN',
     'SYSTEM'
-) ON CONFLICT (dsa_unique_code) DO NOTHING;
+) ON CONFLICT (dsa_unique_code) DO UPDATE SET password = EXCLUDED.password;
 
--- DSA User
-INSERT INTO users (dsa_unique_code, password, full_name, email, mobile_number, role, created_by)
+-- 2. Checker User
+INSERT INTO users (id, dsa_unique_code, password, full_name, email, mobile_number, role, created_by)
 VALUES (
-    'DSA12K93431',
-    '$2a$10$pHv4XCMBLiYYOBx77Jd1ruFn.hPxoT0v8yGNsNsJvvNH5.JNvXfZm',
-    'DSA User One',
+    'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380002',
+    'CHECKER001',
+    '$2a$10$uYxZtKxy0scNyAblaHSxpe6u2zpw46raAJr/DNBZzrM4/1XpvHBe2',
+    'Checker User',
+    'checker@bom.com',
+    '9999999002',
+    'CHECKER',
+    'SYSTEM'
+) ON CONFLICT (dsa_unique_code) DO UPDATE SET password = EXCLUDED.password;
+
+-- 3. DSA User
+INSERT INTO users (id, dsa_unique_code, password, full_name, email, mobile_number, role, created_by)
+VALUES (
+    'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380005',
+    'DSA_ACTIVE_001',
+    '$2a$10$uYxZtKxy0scNyAblaHSxpe6u2zpw46raAJr/DNBZzrM4/1XpvHBe2',
+    'Safe Loans Pvt Ltd',
     'dsa001@example.com',
-    '9876543210',
+    '9876543211',
     'DSA',
     'SYSTEM'
-) ON CONFLICT (dsa_unique_code) DO NOTHING;
+) ON CONFLICT (dsa_unique_code) DO UPDATE SET password = EXCLUDED.password;

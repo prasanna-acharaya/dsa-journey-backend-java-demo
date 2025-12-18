@@ -33,6 +33,15 @@ public class DashboardAnalyticsResponse {
     private Map<String, Long> leadsByProductType;
     private Map<String, Long> leadsByStatus;
 
-    // Conversion rate
+    // Admin Analytics
+    private BigDecimal totalSanctionedAmount;
+    private Long totalDsaCount;
+    private Long empanelledDsaCount;
+    private Long pendingDsaCount;
+    private Long activeDsaCount;
+    private Long inactiveDsaCount;
+    private Map<String, Long> productWiseDsaCount;
+
+    // DSA Conversion Rate
     private String conversionRate;
 }

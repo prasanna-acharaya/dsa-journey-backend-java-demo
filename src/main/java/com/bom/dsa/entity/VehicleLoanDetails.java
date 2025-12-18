@@ -28,10 +28,12 @@ public class VehicleLoanDetails {
     private Lead lead;
 
     @Column(name = "amount_requested", precision = 15, scale = 2, nullable = false)
-    private BigDecimal amountRequested;
+    @Builder.Default
+    private BigDecimal amountRequested = BigDecimal.ZERO;
 
     @Column(name = "repayment_period", nullable = false)
-    private Integer repaymentPeriod;
+    @Builder.Default
+    private Integer repaymentPeriod = 0;
 
     @Column(name = "vehicle_type", nullable = false, length = 20)
     private String vehicleType;
@@ -42,20 +44,25 @@ public class VehicleLoanDetails {
     @Column(name = "model", length = 100)
     private String model;
 
-    @Column(name = "ex_showroom_price", precision = 15, scale = 2)
-    private BigDecimal exShowroomPrice;
+    @Column(name = "ex_showroom_price", precision = 15, scale = 2, nullable = false)
+    @Builder.Default
+    private BigDecimal exShowroomPrice = BigDecimal.ZERO;
 
-    @Column(name = "insurance_cost", precision = 15, scale = 2)
-    private BigDecimal insuranceCost;
+    @Column(name = "insurance_cost", precision = 15, scale = 2, nullable = false)
+    @Builder.Default
+    private BigDecimal insuranceCost = BigDecimal.ZERO;
 
-    @Column(name = "road_tax", precision = 15, scale = 2)
-    private BigDecimal roadTax;
+    @Column(name = "road_tax", precision = 15, scale = 2, nullable = false)
+    @Builder.Default
+    private BigDecimal roadTax = BigDecimal.ZERO;
 
-    @Column(name = "accessories_other_cost", precision = 15, scale = 2)
-    private BigDecimal accessoriesOtherCost;
+    @Column(name = "accessories_other_cost", precision = 15, scale = 2, nullable = false)
+    @Builder.Default
+    private BigDecimal accessoriesOtherCost = BigDecimal.ZERO;
 
-    @Column(name = "total_cost_of_vehicle", precision = 15, scale = 2)
-    private BigDecimal totalCostOfVehicle;
+    @Column(name = "total_cost_of_vehicle", precision = 15, scale = 2, nullable = false)
+    @Builder.Default
+    private BigDecimal totalCostOfVehicle = BigDecimal.ZERO;
 
     // Dealer Details
     @Column(name = "dealer_name", length = 255)

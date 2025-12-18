@@ -28,10 +28,12 @@ public class EducationLoanDetails {
     private Lead lead;
 
     @Column(name = "amount_requested", precision = 15, scale = 2, nullable = false)
-    private BigDecimal amountRequested;
+    @Builder.Default
+    private BigDecimal amountRequested = BigDecimal.ZERO;
 
     @Column(name = "repayment_period", nullable = false)
-    private Integer repaymentPeriod;
+    @Builder.Default
+    private Integer repaymentPeriod = 0;
 
     @Column(name = "course_name", length = 255)
     private String courseName;
@@ -48,6 +50,7 @@ public class EducationLoanDetails {
     @Column(name = "institution_city", length = 100)
     private String institutionCity;
 
-    @Column(name = "course_duration_years")
-    private Integer courseDurationYears;
+    @Column(name = "course_duration_years", nullable = false)
+    @Builder.Default
+    private Integer courseDurationYears = 0;
 }

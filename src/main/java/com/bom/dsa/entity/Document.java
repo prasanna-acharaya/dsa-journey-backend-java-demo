@@ -30,16 +30,17 @@ public class Document {
     @Column(name = "document_type", nullable = false, length = 50)
     private String documentType;
 
-    @Column(name = "file_name", nullable = false, length = 255)
+    @Column(name = "file_name", length = 255)
     private String fileName;
 
-    @Column(name = "file_path", nullable = false, length = 500)
+    @Column(name = "file_path", length = 500)
     private String filePath;
 
     @Column(name = "file_size", nullable = false)
-    private Long fileSize;
+    @Builder.Default
+    private Long fileSize = 0L;
 
-    @Column(name = "mime_type", nullable = false, length = 100)
+    @Column(name = "mime_type", length = 100)
     private String mimeType;
 
     @Column(name = "uploaded_at", nullable = false)

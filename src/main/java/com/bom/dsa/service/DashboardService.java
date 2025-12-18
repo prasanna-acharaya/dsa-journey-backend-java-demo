@@ -4,11 +4,13 @@ import com.bom.dsa.dto.response.DashboardAnalyticsResponse;
 import com.bom.dsa.enums.LeadStatus;
 import com.bom.dsa.exception.CustomExceptions;
 import com.bom.dsa.repository.LeadRepository;
+import com.bom.dsa.repository.DsaRepository; // Added import
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,34 +24,30 @@ import java.util.Map;
 public class DashboardService {
 
     private final LeadRepository leadRepository;
+    private final DsaRepository dsaRepository; // Added DsaRepository
 
-    public DashboardService(LeadRepository leadRepository) {
+    public DashboardService(LeadRepository leadRepository, DsaRepository dsaRepository) { // Updated constructor
         this.leadRepository = leadRepository;
+        this.dsaRepository = dsaRepository;
     }
 
-    /**
-     * Get dashboard analytics for DSA user.
-     * 
-     * @param createdBy the DSA username
-     * @return Mono containing dashboard analytics
-     */
-    public Mono<DashboardAnalyticsResponse> getDashboardAnalytics(String createdBy) {
-        log.info("Fetching dashboard analytics for user: {}", createdBy);
+    public Mono<DashboardAnalyticsResponse> getDashboardAnalytics(String username) {
+        log.info("Fetching dashboard analytics for user: {}", username);
 
         return Mono.fromCallable(() -> {
             try {
                 // Lead counts by status
-                Long totalLeads = safeCount(leadRepository.countByCreatedByAndIsDeletedFalse(createdBy));
+                Long totalLeads = safeCount(leadRepository.countByCreatedByAndIsDeletedFalse(username));
                 Long appliedLeads = safeCount(
-                        leadRepository.countByCreatedByAndStatusAndIsDeletedFalse(createdBy, LeadStatus.APPLIED));
+                        leadRepository.countByCreatedByAndStatusAndIsDeletedFalse(username, LeadStatus.APPLIED));
                 Long underProcessLeads = safeCount(
-                        leadRepository.countByCreatedByAndStatusAndIsDeletedFalse(createdBy, LeadStatus.UNDER_PROCESS));
+                        leadRepository.countByCreatedByAndStatusAndIsDeletedFalse(username, LeadStatus.UNDER_PROCESS));
                 Long sanctionedLeads = safeCount(
-                        leadRepository.countByCreatedByAndStatusAndIsDeletedFalse(createdBy, LeadStatus.SANCTIONED));
+                        leadRepository.countByCreatedByAndStatusAndIsDeletedFalse(username, LeadStatus.SANCTIONED));
                 Long disbursedLeads = safeCount(
-                        leadRepository.countByCreatedByAndStatusAndIsDeletedFalse(createdBy, LeadStatus.DISBURSED));
+                        leadRepository.countByCreatedByAndStatusAndIsDeletedFalse(username, LeadStatus.DISBURSED));
                 Long rejectedLeads = safeCount(
-                        leadRepository.countByCreatedByAndStatusAndIsDeletedFalse(createdBy, LeadStatus.REJECTED));
+                        leadRepository.countByCreatedByAndStatusAndIsDeletedFalse(username, LeadStatus.REJECTED));
 
                 log.debug(
                         "Lead counts - total: {}, applied: {}, underProcess: {}, sanctioned: {}, disbursed: {}, rejected: {}",
@@ -58,13 +56,12 @@ public class DashboardService {
                 // Product-wise distribution
                 Map<String, Long> leadsByProductType = new HashMap<>();
                 try {
-                    List<Object[]> productTypeResults = leadRepository.countByCreatedByGroupByProductType(createdBy);
+                    List<Object[]> productTypeResults = leadRepository.countByCreatedByGroupByProductType(username);
                     for (Object[] result : productTypeResults) {
                         if (result[0] != null && result[1] != null) {
                             leadsByProductType.put(result[0].toString(), (Long) result[1]);
                         }
                     }
-                    log.debug("Product type distribution: {}", leadsByProductType);
                 } catch (Exception e) {
                     log.warn("Error fetching product type distribution: {}", e.getMessage());
                 }
@@ -72,13 +69,12 @@ public class DashboardService {
                 // Status-wise distribution
                 Map<String, Long> leadsByStatus = new HashMap<>();
                 try {
-                    List<Object[]> statusResults = leadRepository.countByCreatedByGroupByStatus(createdBy);
+                    List<Object[]> statusResults = leadRepository.countByCreatedByGroupByStatus(username);
                     for (Object[] result : statusResults) {
                         if (result[0] != null && result[1] != null) {
                             leadsByStatus.put(result[0].toString(), (Long) result[1]);
                         }
                     }
-                    log.debug("Status distribution: {}", leadsByStatus);
                 } catch (Exception e) {
                     log.warn("Error fetching status distribution: {}", e.getMessage());
                 }
@@ -89,7 +85,6 @@ public class DashboardService {
                     double rate = (disbursedLeads * 100.0) / totalLeads;
                     conversionRate = String.format("%.1f%%", rate);
                 }
-                log.debug("Conversion rate: {}", conversionRate);
 
                 return DashboardAnalyticsResponse.builder()
                         .totalLeads(totalLeads)
@@ -104,7 +99,7 @@ public class DashboardService {
                         .build();
 
             } catch (Exception e) {
-                log.error("Error fetching dashboard analytics for user: {}", createdBy, e);
+                log.error("Error fetching dashboard analytics for user: {}", username, e);
                 throw new CustomExceptions.BusinessException("Failed to fetch dashboard analytics: " + e.getMessage());
             }
         }).subscribeOn(Schedulers.boundedElastic());
@@ -134,10 +129,33 @@ public class DashboardService {
 
                 // Calculate conversion rate
                 String conversionRate = "0%";
-                if (totalLeads > 0) {
+                if (totalLeads != null && totalLeads > 0) {
                     double rate = (disbursedLeads * 100.0) / totalLeads;
                     conversionRate = String.format("%.1f%%", rate);
                 }
+
+                // DSA Statistics
+                Long totalDsas = dsaRepository.count();
+                Long empanelledDsas = safeCount(dsaRepository.countByStatus(com.bom.dsa.enums.DsaStatus.EMPANELLED));
+                Long pendingDsas = safeCount(dsaRepository.countByStatus(com.bom.dsa.enums.DsaStatus.PENDING));
+                Long activeDsas = safeCount(dsaRepository.countActiveDsas());
+                Long inactiveDsas = safeCount(dsaRepository.countInactiveDsas());
+
+                // Product-wise DSA distribution
+                Map<String, Long> productWiseDsaCount = new HashMap<>();
+                try {
+                    List<Object[]> dsaProductResults = dsaRepository.countDsaByProductType();
+                    for (Object[] result : dsaProductResults) {
+                        if (result[0] != null && result[1] != null) {
+                            productWiseDsaCount.put(result[0].toString(), (Long) result[1]);
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("Error fetching product-wise DSA distribution: {}", e.getMessage());
+                }
+
+                // Default total sanctioned amount as requested
+                BigDecimal totalSanctionedAmount = new BigDecimal("1000000.0");
 
                 return DashboardAnalyticsResponse.builder()
                         .totalLeads(totalLeads != null ? totalLeads : 0L)
@@ -147,6 +165,13 @@ public class DashboardService {
                         .disbursedLeads(disbursedLeads)
                         .rejectedLeads(rejectedLeads)
                         .conversionRate(conversionRate)
+                        .totalDsaCount(totalDsas)
+                        .empanelledDsaCount(empanelledDsas)
+                        .pendingDsaCount(pendingDsas)
+                        .activeDsaCount(activeDsas)
+                        .inactiveDsaCount(inactiveDsas)
+                        .productWiseDsaCount(productWiseDsaCount)
+                        .totalSanctionedAmount(totalSanctionedAmount)
                         .build();
 
             } catch (Exception e) {

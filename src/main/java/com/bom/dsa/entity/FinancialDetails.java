@@ -28,17 +28,21 @@ public class FinancialDetails {
     @JoinColumn(name = "lead_id", nullable = false, unique = true)
     private Lead lead;
 
-    @Column(name = "monthly_gross_income", precision = 15, scale = 2)
-    private BigDecimal monthlyGrossIncome;
+    @Column(name = "monthly_gross_income", precision = 15, scale = 2, nullable = false)
+    @Builder.Default
+    private BigDecimal monthlyGrossIncome = BigDecimal.ZERO;
 
-    @Column(name = "monthly_deductions", precision = 15, scale = 2)
-    private BigDecimal monthlyDeductions;
+    @Column(name = "monthly_deductions", precision = 15, scale = 2, nullable = false)
+    @Builder.Default
+    private BigDecimal monthlyDeductions = BigDecimal.ZERO;
 
-    @Column(name = "monthly_emi", precision = 15, scale = 2)
-    private BigDecimal monthlyEmi;
+    @Column(name = "monthly_emi", precision = 15, scale = 2, nullable = false)
+    @Builder.Default
+    private BigDecimal monthlyEmi = BigDecimal.ZERO;
 
-    @Column(name = "monthly_net_income", precision = 15, scale = 2)
-    private BigDecimal monthlyNetIncome;
+    @Column(name = "monthly_net_income", precision = 15, scale = 2, nullable = false)
+    @Builder.Default
+    private BigDecimal monthlyNetIncome = BigDecimal.ZERO;
 
     /**
      * Calculate and return monthly net income.

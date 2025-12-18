@@ -25,17 +25,22 @@ import java.util.UUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import org.springframework.transaction.PlatformTransactionManager; // Added import
+
 @ExtendWith(MockitoExtension.class)
 public class LeadServiceTest {
 
         @Mock
         private LeadRepository leadRepository;
 
+        @Mock
+        private PlatformTransactionManager transactionManager; // Added mock
+
         private LeadService leadService;
 
         @BeforeEach
         void setUp() {
-                leadService = new LeadService(leadRepository);
+                leadService = new LeadService(leadRepository, transactionManager); // Updated constructor
         }
 
         @Test

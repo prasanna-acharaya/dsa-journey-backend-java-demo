@@ -12,13 +12,13 @@ CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     dsa_unique_code VARCHAR(50) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
-    full_name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    mobile_number VARCHAR(15) NOT NULL,
+    full_name VARCHAR(255),
+    email VARCHAR(255) UNIQUE,
+    mobile_number VARCHAR(15),
     role VARCHAR(20) NOT NULL DEFAULT 'DSA',
     is_active BOOLEAN DEFAULT true,
     is_locked BOOLEAN DEFAULT false,
-    failed_login_attempts INTEGER DEFAULT 0,
+    failed_login_attempts INTEGER NOT NULL DEFAULT 0,
     last_login_at TIMESTAMP,
     created_by VARCHAR(100),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -60,15 +60,15 @@ CREATE TABLE basic_details (
     
     -- Personal Information
     salutation VARCHAR(10),
-    first_name VARCHAR(100) NOT NULL,
+    first_name VARCHAR(100),
     middle_name VARCHAR(100),
-    last_name VARCHAR(100) NOT NULL,
-    date_of_birth DATE NOT NULL,
+    last_name VARCHAR(100),
+    date_of_birth DATE,
     gender VARCHAR(10) NOT NULL,
     marital_status VARCHAR(20) NOT NULL,
     qualification VARCHAR(50),
-    mobile_number VARCHAR(15) NOT NULL,
-    email_address VARCHAR(255) NOT NULL,
+    mobile_number VARCHAR(15),
+    email_address VARCHAR(255),
     
     -- Current Address
     current_address_line1 VARCHAR(255),
@@ -102,7 +102,7 @@ CREATE TABLE occupation_details (
     company_type VARCHAR(50),
     employer_name VARCHAR(255),
     designation VARCHAR(100),
-    total_experience DECIMAL(4,2),
+    total_experience DECIMAL(4,2) NOT NULL DEFAULT 0.0,
     FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
 );
 
@@ -112,10 +112,10 @@ CREATE TABLE occupation_details (
 CREATE TABLE financial_details (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     lead_id UUID NOT NULL UNIQUE,
-    monthly_gross_income DECIMAL(15,2),
-    monthly_deductions DECIMAL(15,2),
-    monthly_emi DECIMAL(15,2),
-    monthly_net_income DECIMAL(15,2),
+    monthly_gross_income DECIMAL(15,2) NOT NULL DEFAULT 0.0,
+    monthly_deductions DECIMAL(15,2) NOT NULL DEFAULT 0.0,
+    monthly_emi DECIMAL(15,2) NOT NULL DEFAULT 0.0,
+    monthly_net_income DECIMAL(15,2) NOT NULL DEFAULT 0.0,
     FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
 );
 
@@ -125,16 +125,16 @@ CREATE TABLE financial_details (
 CREATE TABLE vehicle_loan_details (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     lead_id UUID NOT NULL UNIQUE,
-    amount_requested DECIMAL(15,2) NOT NULL,
-    repayment_period INTEGER NOT NULL,
+    amount_requested DECIMAL(15,2) NOT NULL DEFAULT 0.0,
+    repayment_period INTEGER NOT NULL DEFAULT 0,
     vehicle_type VARCHAR(20) NOT NULL,
     make VARCHAR(100),
     model VARCHAR(100),
-    ex_showroom_price DECIMAL(15,2),
-    insurance_cost DECIMAL(15,2),
-    road_tax DECIMAL(15,2),
-    accessories_other_cost DECIMAL(15,2),
-    total_cost_of_vehicle DECIMAL(15,2),
+    ex_showroom_price DECIMAL(15,2) NOT NULL DEFAULT 0.0,
+    insurance_cost DECIMAL(15,2) NOT NULL DEFAULT 0.0,
+    road_tax DECIMAL(15,2) NOT NULL DEFAULT 0.0,
+    accessories_other_cost DECIMAL(15,2) NOT NULL DEFAULT 0.0,
+    total_cost_of_vehicle DECIMAL(15,2) NOT NULL DEFAULT 0.0,
     
     -- Dealer Details
     dealer_name VARCHAR(255),
@@ -155,14 +155,14 @@ CREATE TABLE vehicle_loan_details (
 CREATE TABLE education_loan_details (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     lead_id UUID NOT NULL UNIQUE,
-    amount_requested DECIMAL(15,2) NOT NULL,
-    repayment_period INTEGER NOT NULL,
+    amount_requested DECIMAL(15,2) NOT NULL DEFAULT 0.0,
+    repayment_period INTEGER NOT NULL DEFAULT 0,
     course_name VARCHAR(255),
     institution_name VARCHAR(255),
     institution_country VARCHAR(100),
     institution_state VARCHAR(100),
     institution_city VARCHAR(100),
-    course_duration_years INTEGER,
+    course_duration_years INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
 );
 
@@ -172,9 +172,9 @@ CREATE TABLE education_loan_details (
 CREATE TABLE home_loan_details (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     lead_id UUID NOT NULL UNIQUE,
-    amount_requested DECIMAL(15,2) NOT NULL,
-    repayment_period INTEGER NOT NULL,
-    property_type VARCHAR(50),
+    amount_requested DECIMAL(15,2) NOT NULL DEFAULT 0.0,
+    repayment_period INTEGER NOT NULL DEFAULT 0,
+    property_type VARCHAR(50) NOT NULL,
     property_address_line1 VARCHAR(255),
     property_address_line2 VARCHAR(255),
     property_address_line3 VARCHAR(255),
@@ -182,7 +182,7 @@ CREATE TABLE home_loan_details (
     property_state VARCHAR(100),
     property_city VARCHAR(100),
     property_pincode VARCHAR(10),
-    property_value DECIMAL(15,2),
+    property_value DECIMAL(15,2) NOT NULL DEFAULT 0.0,
     FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
 );
 
@@ -192,9 +192,9 @@ CREATE TABLE home_loan_details (
 CREATE TABLE loan_against_property_details (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     lead_id UUID NOT NULL UNIQUE,
-    amount_requested DECIMAL(15,2) NOT NULL,
-    repayment_period INTEGER NOT NULL,
-    property_type VARCHAR(50),
+    amount_requested DECIMAL(15,2) NOT NULL DEFAULT 0.0,
+    repayment_period INTEGER NOT NULL DEFAULT 0,
+    property_type VARCHAR(50) NOT NULL,
     property_address_line1 VARCHAR(255),
     property_address_line2 VARCHAR(255),
     property_address_line3 VARCHAR(255),
@@ -202,7 +202,7 @@ CREATE TABLE loan_against_property_details (
     property_state VARCHAR(100),
     property_city VARCHAR(100),
     property_pincode VARCHAR(10),
-    property_market_value DECIMAL(15,2),
+    property_market_value DECIMAL(15,2) NOT NULL DEFAULT 0.0,
     FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
 );
 
@@ -213,10 +213,10 @@ CREATE TABLE documents (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     lead_id UUID NOT NULL,
     document_type VARCHAR(50) NOT NULL,
-    file_name VARCHAR(255) NOT NULL,
-    file_path VARCHAR(500) NOT NULL,
-    file_size BIGINT NOT NULL,
-    mime_type VARCHAR(100) NOT NULL,
+    file_name VARCHAR(255),
+    file_path VARCHAR(500),
+    file_size BIGINT NOT NULL DEFAULT 0,
+    mime_type VARCHAR(100),
     uploaded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     uploaded_by VARCHAR(100) NOT NULL,
     FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
@@ -231,8 +231,8 @@ CREATE TABLE billing (
     user_id UUID NOT NULL,
     period_start DATE NOT NULL,
     period_end DATE NOT NULL,
-    payout_percentage DECIMAL(5,4) NOT NULL,
-    amount DECIMAL(15,2) NOT NULL,
+    payout_percentage DECIMAL(5,4) NOT NULL DEFAULT 0.0,
+    amount DECIMAL(15,2) NOT NULL DEFAULT 0.0,
     status VARCHAR(30) NOT NULL DEFAULT 'PENDING',
     generated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     paid_at TIMESTAMP,
@@ -265,28 +265,4 @@ CREATE INDEX idx_billing_user_id ON billing(user_id);
 CREATE INDEX idx_billing_status ON billing(status);
 CREATE INDEX idx_billing_period ON billing(period_start, period_end);
 
--- =====================================
--- Insert default admin user (password: Admin@123 - bcrypt encoded)
--- =====================================
-INSERT INTO users (dsa_unique_code, password, full_name, email, mobile_number, role, created_by)
-VALUES (
-    'ADMIN001',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcXQQzZIE.2m5rVZt0TCXV.Rmr6',
-    'System Administrator',
-    'admin@bom.com',
-    '9999999999',
-    'ADMIN',
-    'SYSTEM'
-);
-
--- Insert sample DSA user (password: dsa123 - bcrypt encoded)
-INSERT INTO users (dsa_unique_code, password, full_name, email, mobile_number, role, created_by)
-VALUES (
-    'DSA12K93431',
-    '$2a$10$pHv4XCMBLiYYOBx77Jd1ruFn.hPxoT0v8yGNsNsJvvNH5.JNvXfZm',
-    'DSA User One',
-    'dsa001@example.com',
-    '9876543210',
-    'DSA',
-    'SYSTEM'
-);
+-- Centralized seeding in V2

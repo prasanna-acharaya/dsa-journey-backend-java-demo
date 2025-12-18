@@ -33,9 +33,12 @@ import java.util.stream.Collectors;
 public class LeadService {
 
     private final LeadRepository leadRepository;
+    private final org.springframework.transaction.support.TransactionTemplate transactionTemplate;
 
-    public LeadService(LeadRepository leadRepository) {
+    public LeadService(LeadRepository leadRepository,
+            org.springframework.transaction.PlatformTransactionManager transactionManager) {
         this.leadRepository = leadRepository;
+        this.transactionTemplate = new org.springframework.transaction.support.TransactionTemplate(transactionManager);
     }
 
     /**
@@ -45,66 +48,67 @@ public class LeadService {
      * @param createdBy the username of the creator
      * @return Mono containing the created lead response
      */
-    @Transactional
     public Mono<LeadResponse> createLead(CreateLeadRequest request, String createdBy) {
         log.info("Creating new lead for user: {}, productType: {}", createdBy, request.getProductType());
 
         return Mono.fromCallable(() -> {
-            try {
-                // Create lead entity
-                Lead lead = Lead.builder()
-                        .productType(request.getProductType())
-                        .status(LeadStatus.APPLIED)
-                        .createdBy(createdBy) // Manually set to context user
-                        .build();
+            return transactionTemplate.execute(status -> {
+                try {
+                    // Create lead entity
+                    Lead lead = Lead.builder()
+                            .productType(request.getProductType())
+                            .status(LeadStatus.APPLIED)
+                            .createdBy(createdBy) // Manually set to context user
+                            .build();
 
-                // Map and set basic details
-                if (request.getBasicDetails() != null) {
-                    log.debug("Mapping basic details for lead");
-                    BasicDetails basicDetails = mapBasicDetails(request.getBasicDetails());
-                    lead.setBasicDetails(basicDetails);
-                } else {
-                    log.warn("Basic details not provided in create request");
-                    throw new CustomExceptions.BusinessException("Basic details are required to create a lead");
+                    // Map and set basic details
+                    if (request.getBasicDetails() != null) {
+                        log.debug("Mapping basic details for lead");
+                        BasicDetails basicDetails = mapBasicDetails(request.getBasicDetails());
+                        lead.setBasicDetails(basicDetails);
+                    } else {
+                        log.warn("Basic details not provided in create request");
+                        throw new CustomExceptions.BusinessException("Basic details are required to create a lead");
+                    }
+
+                    // Map and set occupation details
+                    if (request.getOccupationDetails() != null) {
+                        log.debug("Mapping occupation details for lead");
+                        OccupationDetails occupationDetails = mapOccupationDetails(request.getOccupationDetails());
+                        lead.setOccupationDetails(occupationDetails);
+                    }
+
+                    // Map and set financial details
+                    if (request.getFinancialDetails() != null) {
+                        log.debug("Mapping financial details for lead");
+                        FinancialDetails financialDetails = mapFinancialDetails(request.getFinancialDetails());
+                        lead.setFinancialDetails(financialDetails);
+                    }
+
+                    // Map loan details based on product type
+                    if (request.getLoanDetails() != null) {
+                        log.debug("Mapping loan details for productType: {}", request.getProductType());
+                        mapLoanDetails(lead, request.getLoanDetails(), request.getProductType());
+                    } else {
+                        log.warn("Loan details not provided in create request");
+                        throw new CustomExceptions.BusinessException("Loan details are required to create a lead");
+                    }
+
+                    // Save lead
+                    Lead savedLead = leadRepository.save(lead);
+                    log.info("Successfully created lead with reference number: {}, id: {}",
+                            savedLead.getApplicationReferenceNumber(), savedLead.getId());
+
+                    return toLeadResponse(savedLead);
+
+                } catch (CustomExceptions.BusinessException e) {
+                    log.error("Business validation failed while creating lead: {}", e.getMessage());
+                    throw e;
+                } catch (Exception e) {
+                    log.error("Unexpected error while creating lead for user: {}", createdBy, e);
+                    throw new CustomExceptions.BusinessException("Failed to create lead: " + e.getMessage());
                 }
-
-                // Map and set occupation details
-                if (request.getOccupationDetails() != null) {
-                    log.debug("Mapping occupation details for lead");
-                    OccupationDetails occupationDetails = mapOccupationDetails(request.getOccupationDetails());
-                    lead.setOccupationDetails(occupationDetails);
-                }
-
-                // Map and set financial details
-                if (request.getFinancialDetails() != null) {
-                    log.debug("Mapping financial details for lead");
-                    FinancialDetails financialDetails = mapFinancialDetails(request.getFinancialDetails());
-                    lead.setFinancialDetails(financialDetails);
-                }
-
-                // Map loan details based on product type
-                if (request.getLoanDetails() != null) {
-                    log.debug("Mapping loan details for productType: {}", request.getProductType());
-                    mapLoanDetails(lead, request.getLoanDetails(), request.getProductType());
-                } else {
-                    log.warn("Loan details not provided in create request");
-                    throw new CustomExceptions.BusinessException("Loan details are required to create a lead");
-                }
-
-                // Save lead
-                Lead savedLead = leadRepository.save(lead);
-                log.info("Successfully created lead with reference number: {}, id: {}",
-                        savedLead.getApplicationReferenceNumber(), savedLead.getId());
-
-                return toLeadResponse(savedLead);
-
-            } catch (CustomExceptions.BusinessException e) {
-                log.error("Business validation failed while creating lead: {}", e.getMessage());
-                throw e;
-            } catch (Exception e) {
-                log.error("Unexpected error while creating lead for user: {}", createdBy, e);
-                throw new CustomExceptions.BusinessException("Failed to create lead: " + e.getMessage());
-            }
+            });
         }).subscribeOn(Schedulers.boundedElastic());
     }
 
@@ -147,6 +151,7 @@ public class LeadService {
      * @param pageable    pagination info
      * @return Mono containing page of lead summaries
      */
+    @Transactional(readOnly = true)
     public Mono<Page<LeadSummaryResponse>> getLeads(String createdBy, LeadStatus status,
             ProductType productType, String searchTerm,
             Pageable pageable) {
@@ -180,6 +185,7 @@ public class LeadService {
      * @param limit     maximum number of leads to return
      * @return Mono containing list of lead summaries
      */
+    @Transactional(readOnly = true)
     public Mono<List<LeadSummaryResponse>> getRecentLeads(String createdBy, int limit) {
         log.info("Fetching {} recent leads for user: {}", limit, createdBy);
 
@@ -207,58 +213,60 @@ public class LeadService {
      * @param updatedBy the username of the updater
      * @return Mono containing the updated lead response
      */
-    @Transactional
     public Mono<LeadResponse> updateLead(UpdateLeadRequest request, String updatedBy) {
         log.info("Updating lead: {} by user: {}", request.getLeadId(), updatedBy);
 
         return Mono.fromCallable(() -> {
-            try {
-                Lead lead = leadRepository.findByIdWithDetails(request.getLeadId())
-                        .orElseThrow(() -> {
-                            log.warn("Lead not found for update, id: {}", request.getLeadId());
-                            return new CustomExceptions.ResourceNotFoundException("Lead", "id", request.getLeadId());
-                        });
+            return transactionTemplate.execute(status -> {
+                try {
+                    Lead lead = leadRepository.findByIdWithDetails(request.getLeadId())
+                            .orElseThrow(() -> {
+                                log.warn("Lead not found for update, id: {}", request.getLeadId());
+                                return new CustomExceptions.ResourceNotFoundException("Lead", "id",
+                                        request.getLeadId());
+                            });
 
-                // Check if lead can be updated
-                if (lead.getStatus() != LeadStatus.DRAFT) {
-                    log.warn("Attempted to update lead in non-DRAFT status, leadId: {}, status: {}",
-                            lead.getId(), lead.getStatus());
-                    throw new CustomExceptions.InvalidOperationException(
-                            "Only leads in DRAFT status can be updated. Current status: " + lead.getStatus());
+                    // Check if lead can be updated
+                    if (lead.getStatus() != LeadStatus.DRAFT) {
+                        log.warn("Attempted to update lead in non-DRAFT status, leadId: {}, status: {}",
+                                lead.getId(), lead.getStatus());
+                        throw new CustomExceptions.InvalidOperationException(
+                                "Only leads in DRAFT status can be updated. Current status: " + lead.getStatus());
+                    }
+
+                    // Update basic details if provided
+                    if (request.getBasicDetails() != null) {
+                        log.debug("Updating basic details for lead: {}", lead.getId());
+                        BasicDetails basicDetails = mapBasicDetails(request.getBasicDetails());
+                        lead.setBasicDetails(basicDetails);
+                    }
+
+                    // Update occupation details if provided
+                    if (request.getOccupationDetails() != null) {
+                        log.debug("Updating occupation details for lead: {}", lead.getId());
+                        OccupationDetails occupationDetails = mapOccupationDetails(request.getOccupationDetails());
+                        lead.setOccupationDetails(occupationDetails);
+                    }
+
+                    // Update financial details if provided
+                    if (request.getFinancialDetails() != null) {
+                        log.debug("Updating financial details for lead: {}", lead.getId());
+                        FinancialDetails financialDetails = mapFinancialDetails(request.getFinancialDetails());
+                        lead.setFinancialDetails(financialDetails);
+                    }
+
+                    Lead updatedLead = leadRepository.save(lead);
+                    log.info("Successfully updated lead: {}", updatedLead.getApplicationReferenceNumber());
+
+                    return toLeadResponse(updatedLead);
+
+                } catch (CustomExceptions.ResourceNotFoundException | CustomExceptions.InvalidOperationException e) {
+                    throw e;
+                } catch (Exception e) {
+                    log.error("Error updating lead: {}", request.getLeadId(), e);
+                    throw new CustomExceptions.BusinessException("Failed to update lead: " + e.getMessage());
                 }
-
-                // Update basic details if provided
-                if (request.getBasicDetails() != null) {
-                    log.debug("Updating basic details for lead: {}", lead.getId());
-                    BasicDetails basicDetails = mapBasicDetails(request.getBasicDetails());
-                    lead.setBasicDetails(basicDetails);
-                }
-
-                // Update occupation details if provided
-                if (request.getOccupationDetails() != null) {
-                    log.debug("Updating occupation details for lead: {}", lead.getId());
-                    OccupationDetails occupationDetails = mapOccupationDetails(request.getOccupationDetails());
-                    lead.setOccupationDetails(occupationDetails);
-                }
-
-                // Update financial details if provided
-                if (request.getFinancialDetails() != null) {
-                    log.debug("Updating financial details for lead: {}", lead.getId());
-                    FinancialDetails financialDetails = mapFinancialDetails(request.getFinancialDetails());
-                    lead.setFinancialDetails(financialDetails);
-                }
-
-                Lead updatedLead = leadRepository.save(lead);
-                log.info("Successfully updated lead: {}", updatedLead.getApplicationReferenceNumber());
-
-                return toLeadResponse(updatedLead);
-
-            } catch (CustomExceptions.ResourceNotFoundException | CustomExceptions.InvalidOperationException e) {
-                throw e;
-            } catch (Exception e) {
-                log.error("Error updating lead: {}", request.getLeadId(), e);
-                throw new CustomExceptions.BusinessException("Failed to update lead: " + e.getMessage());
-            }
+            });
         }).subscribeOn(Schedulers.boundedElastic());
     }
 
@@ -269,38 +277,39 @@ public class LeadService {
      * @param deletedBy the username of the deleter
      * @return Mono<Void>
      */
-    @Transactional
     public Mono<Void> deleteLead(UUID leadId, String deletedBy) {
         log.info("Deleting lead: {} by user: {}", leadId, deletedBy);
 
         return Mono.fromCallable(() -> {
-            try {
-                Lead lead = leadRepository.findById(leadId)
-                        .orElseThrow(() -> {
-                            log.warn("Lead not found for deletion, id: {}", leadId);
-                            return new CustomExceptions.ResourceNotFoundException("Lead", "id", leadId);
-                        });
+            return transactionTemplate.execute(status -> {
+                try {
+                    Lead lead = leadRepository.findById(leadId)
+                            .orElseThrow(() -> {
+                                log.warn("Lead not found for deletion, id: {}", leadId);
+                                return new CustomExceptions.ResourceNotFoundException("Lead", "id", leadId);
+                            });
 
-                // Check if lead can be deleted
-                if (lead.getStatus() != LeadStatus.DRAFT) {
-                    log.warn("Attempted to delete lead in non-DRAFT status, leadId: {}, status: {}",
-                            lead.getId(), lead.getStatus());
-                    throw new CustomExceptions.InvalidOperationException(
-                            "Only leads in DRAFT status can be deleted. Current status: " + lead.getStatus());
+                    // Check if lead can be deleted
+                    if (lead.getStatus() != LeadStatus.DRAFT) {
+                        log.warn("Attempted to delete lead in non-DRAFT status, leadId: {}, status: {}",
+                                lead.getId(), lead.getStatus());
+                        throw new CustomExceptions.InvalidOperationException(
+                                "Only leads in DRAFT status can be deleted. Current status: " + lead.getStatus());
+                    }
+
+                    lead.softDelete(deletedBy);
+                    leadRepository.save(lead);
+
+                    log.info("Successfully soft deleted lead: {}", lead.getApplicationReferenceNumber());
+                    return null;
+
+                } catch (CustomExceptions.ResourceNotFoundException | CustomExceptions.InvalidOperationException e) {
+                    throw e;
+                } catch (Exception e) {
+                    log.error("Error deleting lead: {}", leadId, e);
+                    throw new CustomExceptions.BusinessException("Failed to delete lead: " + e.getMessage());
                 }
-
-                lead.softDelete(deletedBy);
-                leadRepository.save(lead);
-
-                log.info("Successfully soft deleted lead: {}", lead.getApplicationReferenceNumber());
-                return null;
-
-            } catch (CustomExceptions.ResourceNotFoundException | CustomExceptions.InvalidOperationException e) {
-                throw e;
-            } catch (Exception e) {
-                log.error("Error deleting lead: {}", leadId, e);
-                throw new CustomExceptions.BusinessException("Failed to delete lead: " + e.getMessage());
-            }
+            });
         }).subscribeOn(Schedulers.boundedElastic()).then();
     }
 
@@ -355,7 +364,7 @@ public class LeadService {
                 .companyType(dto.getCompanyType())
                 .employerName(dto.getEmployerName())
                 .designation(dto.getDesignation())
-                .totalExperience(dto.getTotalExperience())
+                .totalExperience(dto.getTotalExperience() != null ? dto.getTotalExperience() : BigDecimal.ZERO)
                 .build();
     }
 
@@ -364,9 +373,9 @@ public class LeadService {
      */
     private FinancialDetails mapFinancialDetails(CreateLeadRequest.FinancialDetailsDto dto) {
         return FinancialDetails.builder()
-                .monthlyGrossIncome(dto.getMonthlyGrossIncome())
-                .monthlyDeductions(dto.getMonthlyDeductions())
-                .monthlyEmi(dto.getMonthlyEmi())
+                .monthlyGrossIncome(dto.getMonthlyGrossIncome() != null ? dto.getMonthlyGrossIncome() : BigDecimal.ZERO)
+                .monthlyDeductions(dto.getMonthlyDeductions() != null ? dto.getMonthlyDeductions() : BigDecimal.ZERO)
+                .monthlyEmi(dto.getMonthlyEmi() != null ? dto.getMonthlyEmi() : BigDecimal.ZERO)
                 .build();
     }
 
@@ -379,20 +388,25 @@ public class LeadService {
         switch (productType) {
             case VEHICLE_LOAN:
                 if (dto.getVehicleLoanDetails() != null) {
+                    var vldDto = dto.getVehicleLoanDetails();
                     VehicleLoanDetails vld = VehicleLoanDetails.builder()
                             .amountRequested(dto.getAmountRequested())
                             .repaymentPeriod(dto.getRepaymentPeriod())
-                            .vehicleType(dto.getVehicleLoanDetails().getVehicleType())
-                            .make(dto.getVehicleLoanDetails().getMake())
-                            .model(dto.getVehicleLoanDetails().getModel())
-                            .exShowroomPrice(dto.getVehicleLoanDetails().getExShowroomPrice())
-                            .insuranceCost(dto.getVehicleLoanDetails().getInsuranceCost())
-                            .roadTax(dto.getVehicleLoanDetails().getRoadTax())
-                            .accessoriesOtherCost(dto.getVehicleLoanDetails().getAccessoriesOtherCost())
+                            .vehicleType(vldDto.getVehicleType())
+                            .make(vldDto.getMake())
+                            .model(vldDto.getModel())
+                            .exShowroomPrice(
+                                    vldDto.getExShowroomPrice() != null ? vldDto.getExShowroomPrice() : BigDecimal.ZERO)
+                            .insuranceCost(
+                                    vldDto.getInsuranceCost() != null ? vldDto.getInsuranceCost() : BigDecimal.ZERO)
+                            .roadTax(vldDto.getRoadTax() != null ? vldDto.getRoadTax() : BigDecimal.ZERO)
+                            .accessoriesOtherCost(
+                                    vldDto.getAccessoriesOtherCost() != null ? vldDto.getAccessoriesOtherCost()
+                                            : BigDecimal.ZERO)
                             .build();
 
-                    if (dto.getVehicleLoanDetails().getDealerDetails() != null) {
-                        var dealer = dto.getVehicleLoanDetails().getDealerDetails();
+                    if (vldDto.getDealerDetails() != null) {
+                        var dealer = vldDto.getDealerDetails();
                         vld.setDealerName(dealer.getDealerName());
                         vld.setDealerAddressLine1(dealer.getAddressLine1());
                         vld.setDealerAddressLine2(dealer.getAddressLine2());
@@ -411,15 +425,17 @@ public class LeadService {
 
             case EDUCATION_LOAN:
                 if (dto.getEducationLoanDetails() != null) {
+                    var eldDto = dto.getEducationLoanDetails();
                     EducationLoanDetails eld = EducationLoanDetails.builder()
                             .amountRequested(dto.getAmountRequested())
                             .repaymentPeriod(dto.getRepaymentPeriod())
-                            .courseName(dto.getEducationLoanDetails().getCourseName())
-                            .institutionName(dto.getEducationLoanDetails().getInstitutionName())
-                            .institutionCountry(dto.getEducationLoanDetails().getInstitutionCountry())
-                            .institutionState(dto.getEducationLoanDetails().getInstitutionState())
-                            .institutionCity(dto.getEducationLoanDetails().getInstitutionCity())
-                            .courseDurationYears(dto.getEducationLoanDetails().getCourseDurationYears())
+                            .courseName(eldDto.getCourseName())
+                            .institutionName(eldDto.getInstitutionName())
+                            .institutionCountry(eldDto.getInstitutionCountry())
+                            .institutionState(eldDto.getInstitutionState())
+                            .institutionCity(eldDto.getInstitutionCity())
+                            .courseDurationYears(
+                                    eldDto.getCourseDurationYears() != null ? eldDto.getCourseDurationYears() : 0)
                             .build();
                     lead.setEducationLoanDetails(eld);
                     log.debug("Education loan details mapped successfully");
@@ -430,11 +446,13 @@ public class LeadService {
 
             case HOME_LOAN:
                 if (dto.getHomeLoanDetails() != null) {
+                    var hldDto = dto.getHomeLoanDetails();
                     HomeLoanDetails hld = HomeLoanDetails.builder()
                             .amountRequested(dto.getAmountRequested())
                             .repaymentPeriod(dto.getRepaymentPeriod())
-                            .propertyType(dto.getHomeLoanDetails().getPropertyType())
-                            .propertyValue(dto.getHomeLoanDetails().getPropertyValue())
+                            .propertyType(hldDto.getPropertyType())
+                            .propertyValue(
+                                    hldDto.getPropertyValue() != null ? hldDto.getPropertyValue() : BigDecimal.ZERO)
                             .build();
 
                     if (dto.getHomeLoanDetails().getPropertyAddress() != null) {
@@ -456,11 +474,14 @@ public class LeadService {
 
             case LOAN_AGAINST_PROPERTY:
                 if (dto.getLoanAgainstPropertyDetails() != null) {
+                    var lapdDto = dto.getLoanAgainstPropertyDetails();
                     LoanAgainstPropertyDetails lapd = LoanAgainstPropertyDetails.builder()
                             .amountRequested(dto.getAmountRequested())
                             .repaymentPeriod(dto.getRepaymentPeriod())
-                            .propertyType(dto.getLoanAgainstPropertyDetails().getPropertyType())
-                            .propertyMarketValue(dto.getLoanAgainstPropertyDetails().getPropertyMarketValue())
+                            .propertyType(lapdDto.getPropertyType())
+                            .propertyMarketValue(
+                                    lapdDto.getPropertyMarketValue() != null ? lapdDto.getPropertyMarketValue()
+                                            : BigDecimal.ZERO)
                             .build();
 
                     if (dto.getLoanAgainstPropertyDetails().getPropertyAddress() != null) {

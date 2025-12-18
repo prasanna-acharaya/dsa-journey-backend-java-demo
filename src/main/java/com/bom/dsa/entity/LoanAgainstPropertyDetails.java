@@ -28,12 +28,14 @@ public class LoanAgainstPropertyDetails {
     private Lead lead;
 
     @Column(name = "amount_requested", precision = 15, scale = 2, nullable = false)
-    private BigDecimal amountRequested;
+    @Builder.Default
+    private BigDecimal amountRequested = BigDecimal.ZERO;
 
     @Column(name = "repayment_period", nullable = false)
-    private Integer repaymentPeriod;
+    @Builder.Default
+    private Integer repaymentPeriod = 0;
 
-    @Column(name = "property_type", length = 50)
+    @Column(name = "property_type", nullable = false, length = 50)
     private String propertyType;
 
     @Column(name = "property_address_line1", length = 255)
@@ -57,6 +59,7 @@ public class LoanAgainstPropertyDetails {
     @Column(name = "property_pincode", length = 10)
     private String propertyPincode;
 
-    @Column(name = "property_market_value", precision = 15, scale = 2)
-    private BigDecimal propertyMarketValue;
+    @Column(name = "property_market_value", precision = 15, scale = 2, nullable = false)
+    @Builder.Default
+    private BigDecimal propertyMarketValue = BigDecimal.ZERO;
 }

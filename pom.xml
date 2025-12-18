@@ -159,6 +159,17 @@
 					</excludes>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.flywaydb</groupId>
+				<artifactId>flyway-maven-plugin</artifactId>
+				<version>10.10.0</version>
+				<configuration>
+					<url>jdbc:postgresql://ep-mute-poetry-a17sm058-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require</url>
+					<user>neondb_owner</user>
+					<password>npg_einTomHs7b5F</password>
+					<cleanDisabled>false</cleanDisabled>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 	<repositories>
