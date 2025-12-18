@@ -97,12 +97,7 @@ public class AuthService implements ReactiveUserDetailsService {
                                             request.getUsername());
                                 });
 
-                        // Check if account is locked
-                        if (user.getIsLocked()) {
-                            log.warn("Login attempt for locked account: {}", user.getDsaUniqueCode());
-                            throw new CustomExceptions.UnauthorizedException(
-                                    "Account is locked. Please contact administrator.");
-                        }
+                        // Account locking check removed as per user request
 
                         // Record successful login
                         user.recordSuccessfulLogin();
