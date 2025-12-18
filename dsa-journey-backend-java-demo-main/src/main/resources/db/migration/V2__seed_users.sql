@@ -12,7 +12,7 @@ VALUES (
     '9999999001',
     'ADMIN',
     'SYSTEM'
-) ON CONFLICT (dsa_unique_code) DO NOTHING;
+) ON CONFLICT (dsa_unique_code) DO UPDATE SET password = EXCLUDED.password;
 
 -- 2. Checker User
 INSERT INTO users (id, dsa_unique_code, password, full_name, email, mobile_number, role, created_by)
@@ -25,7 +25,7 @@ VALUES (
     '9999999002',
     'CHECKER',
     'SYSTEM'
-) ON CONFLICT (dsa_unique_code) DO NOTHING;
+) ON CONFLICT (dsa_unique_code) DO UPDATE SET password = EXCLUDED.password;
 
 -- 3. DSA User
 INSERT INTO users (id, dsa_unique_code, password, full_name, email, mobile_number, role, created_by)
@@ -38,4 +38,4 @@ VALUES (
     '9876543211',
     'DSA',
     'SYSTEM'
-) ON CONFLICT (dsa_unique_code) DO NOTHING;
+) ON CONFLICT (dsa_unique_code) DO UPDATE SET password = EXCLUDED.password;
