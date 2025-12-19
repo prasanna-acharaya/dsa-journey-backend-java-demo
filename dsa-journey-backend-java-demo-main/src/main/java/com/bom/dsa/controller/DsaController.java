@@ -29,43 +29,50 @@ public class DsaController {
 
     @PostMapping
     @Operation(summary = "Create DSA", description = "Create a new DSA profile (Maker)")
-    public ResponseEntity<DsaResponseDto> createDsa(
+    public reactor.core.publisher.Mono<ResponseEntity<DsaResponseDto>> createDsa(
             @RequestBody DsaRequestDto request,
             @org.springframework.security.core.annotation.AuthenticationPrincipal String username) {
-        return ResponseEntity.ok(dsaService.createDsa(request, username));
+        return dsaService.createDsa(request, username)
+                .map(ResponseEntity::ok);
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update DSA", description = "Update an existing DSA profile")
-    public ResponseEntity<DsaResponseDto> updateDsa(@PathVariable UUID id, @RequestBody DsaRequestDto request) {
-        return ResponseEntity.ok(dsaService.updateDsa(id, request));
+    public reactor.core.publisher.Mono<ResponseEntity<DsaResponseDto>> updateDsa(@PathVariable UUID id,
+            @RequestBody DsaRequestDto request) {
+        return dsaService.updateDsa(id, request)
+                .map(ResponseEntity::ok);
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get DSA by ID", description = "Get a single DSA profile by its UUID")
+    public reactor.core.publisher.Mono<ResponseEntity<DsaResponseDto>> getDsaById(@PathVariable UUID id) {
+        return dsaService.getDsaById(id)
+                .map(ResponseEntity::ok);
     }
 
     @PutMapping("/{id}/status")
     @PreAuthorize("hasRole('CHECKER') or hasRole('ADMIN')")
     @Operation(summary = "Update DSA Status", description = "Approve/Reject DSA (Checker/Admin)")
-    public ResponseEntity<DsaResponseDto> updateDsaStatus(@PathVariable UUID id, @RequestParam DsaStatus status) {
-        return ResponseEntity.ok(dsaService.updateDsaStatus(id, status));
+    public reactor.core.publisher.Mono<ResponseEntity<DsaResponseDto>> updateDsaStatus(@PathVariable UUID id,
+            @RequestParam DsaStatus status) {
+        return dsaService.updateDsaStatus(id, status)
+                .map(ResponseEntity::ok);
     }
 
     @GetMapping
     @Operation(summary = "Get All DSAs", description = "Get list of DSAs with filters")
-    public ResponseEntity<Page<DsaResponseDto>> getAllDsas(
+    public reactor.core.publisher.Mono<ResponseEntity<Page<DsaResponseDto>>> getAllDsas(
             @RequestParam(required = false) String category,
             @RequestParam(required = false) DsaStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "created_at") String sortBy, // Note: DB field is created_at but entity uses
-                                                                      // auditing? Dsa entity doesn't have created_at
-                                                                      // mapped in @Column explicitly, let's use 'id'
-                                                                      // for default sort or add audit fields.
-            // Dsa Entity has @EntityListeners(AuditingEntityListener.class) but no fields?
-            // Wait, I missed adding Audit fields to Dsa Entity!
-            // I will default sort by 'name' for now.
+            @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir) {
 
-        Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by("name").ascending() : Sort.by("name").descending();
+        Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        return ResponseEntity.ok(dsaService.getAllDsas(category, status, pageable));
+        return dsaService.getAllDsas(category, status, pageable)
+                .map(ResponseEntity::ok);
     }
 }

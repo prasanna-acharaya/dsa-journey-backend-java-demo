@@ -6,9 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -97,10 +95,10 @@ public class Dsa {
     @Builder.Default
     private List<ProductType> products = new ArrayList<>();
 
-    @OneToOne(mappedBy = "dsa", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "dsa", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private BankAccountDetails bankAccountDetails;
 
-    @OneToMany(mappedBy = "dsa", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "dsa", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @Builder.Default
     private List<DsaDocument> documents = new ArrayList<>();
 
