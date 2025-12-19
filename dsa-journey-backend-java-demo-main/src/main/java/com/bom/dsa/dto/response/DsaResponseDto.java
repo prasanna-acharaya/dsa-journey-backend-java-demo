@@ -39,7 +39,7 @@ public class DsaResponseDto {
     private String zoneMapping;
 
     private Double riskScore;
-    private String checkerRemarks;
+    private String remark;
 
     private List<ProductType> products;
     private BankDetailsDto bankDetails;

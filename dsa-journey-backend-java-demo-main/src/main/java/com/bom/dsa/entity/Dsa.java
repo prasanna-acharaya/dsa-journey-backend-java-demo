@@ -85,8 +85,8 @@ public class Dsa {
     @Builder.Default
     private Double riskScore = 0.0;
 
-    @Column(name = "checker_remarks", length = 500)
-    private String checkerRemarks;
+    @Column(name = "remark", length = 500)
+    private String remark;
 
     @Column(name = "address_line_1", length = 255)
     private String addressLine1;

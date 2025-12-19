@@ -112,16 +112,23 @@ public class DsaService {
                 dsa.setConstitution(request.getConstitution());
                 dsa.setGstin(request.getGstin());
                 dsa.setPan(request.getPan());
+                dsa.setRegistrationDate(request.getRegistrationDate());
+                dsa.setEmpanelmentDate(request.getEmpanelmentDate());
+                dsa.setAgreementDate(request.getAgreementDate());
+                dsa.setAgreementExpiryDate(request.getAgreementExpiryDate());
+                dsa.setAgreementPeriod(request.getAgreementPeriod());
+                dsa.setZoneMapping(request.getZoneMapping());
+                dsa.setRiskScore(request.getRiskScore() != null ? request.getRiskScore() : dsa.getRiskScore());
 
                 // Update products
                 if (request.getProducts() != null) {
-                    dsa.setProducts(request.getProducts());
+                    dsa.setProducts(new ArrayList<>(request.getProducts()));
                 }
 
-                // Update Bank (Replace logic for simplicity)
+                // Update Bank Details
                 if (request.getBankDetails() != null) {
                     if (dsa.getBankAccountDetails() == null) {
-                        BankAccountDetails bank = BankAccountDetails.builder().build();
+                        BankAccountDetails bank = BankAccountDetails.builder().dsa(dsa).build();
                         dsa.setBankAccountDetails(bank);
                     }
                     dsa.getBankAccountDetails().setAccountName(request.getBankDetails().getAccountName());
@@ -144,13 +151,13 @@ public class DsaService {
         }).subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic());
     }
 
-    public reactor.core.publisher.Mono<DsaResponseDto> updateDsaStatus(UUID id, DsaStatus status, String remarks) {
+    public reactor.core.publisher.Mono<DsaResponseDto> updateDsaStatus(UUID id, DsaStatus status, String remark) {
         return reactor.core.publisher.Mono.fromCallable(() -> {
             return transactionTemplate.execute(txStatus -> {
                 Dsa dsa = dsaRepository.findById(id)
                         .orElseThrow(() -> new CustomExceptions.ResourceNotFoundException("DSA", "id", id));
                 dsa.setStatus(status);
-                dsa.setCheckerRemarks(remarks);
+                dsa.setRemark(remark);
                 return mapToResponse(dsaRepository.save(dsa));
             });
         }).subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic());
@@ -218,7 +225,7 @@ public class DsaService {
                 .agreementPeriod(dsa.getAgreementPeriod())
                 .zoneMapping(dsa.getZoneMapping())
                 .riskScore(dsa.getRiskScore())
-                .checkerRemarks(dsa.getCheckerRemarks())
+                .remark(dsa.getRemark())
                 .products(dsa.getProducts())
                 .bankDetails(bankDto)
                 .documents(docDtos)
