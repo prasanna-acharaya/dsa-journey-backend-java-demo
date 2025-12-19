@@ -144,12 +144,13 @@ public class DsaService {
         }).subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic());
     }
 
-    public reactor.core.publisher.Mono<DsaResponseDto> updateDsaStatus(UUID id, DsaStatus status) {
+    public reactor.core.publisher.Mono<DsaResponseDto> updateDsaStatus(UUID id, DsaStatus status, String remarks) {
         return reactor.core.publisher.Mono.fromCallable(() -> {
             return transactionTemplate.execute(txStatus -> {
                 Dsa dsa = dsaRepository.findById(id)
                         .orElseThrow(() -> new CustomExceptions.ResourceNotFoundException("DSA", "id", id));
                 dsa.setStatus(status);
+                dsa.setCheckerRemarks(remarks);
                 return mapToResponse(dsaRepository.save(dsa));
             });
         }).subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic());
@@ -217,6 +218,7 @@ public class DsaService {
                 .agreementPeriod(dsa.getAgreementPeriod())
                 .zoneMapping(dsa.getZoneMapping())
                 .riskScore(dsa.getRiskScore())
+                .checkerRemarks(dsa.getCheckerRemarks())
                 .products(dsa.getProducts())
                 .bankDetails(bankDto)
                 .documents(docDtos)
